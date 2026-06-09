@@ -39,7 +39,7 @@ async function main() {
     }
 
     else {
-      console.log("Command not found!");
+      console.log("Unknown command!");
     }
   }
 
