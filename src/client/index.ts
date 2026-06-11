@@ -1,24 +1,28 @@
 import { clientWelcome, commandStatus, getInput, printClientHelp, printQuit } from "../internal/gamelogic/gamelogic.js";
 import amqp from "amqplib";
-import { declareAndBind, SimpleQueueType } from "../internal/pubsub/declareAndBind.js";
-import { ExchangePerilDirect, PauseKey } from "../internal/routing/routing.js";
+import { subscribeJSON } from "../internal/pubsub/subscribeJSON.js";
+import { SimpleQueueType } from "../internal/pubsub/declareAndBind.js";
+import { ArmyMovesPrefix, ExchangePerilDirect, ExchangePerilTopic, PauseKey } from "../internal/routing/routing.js";
 import { GameState } from "../internal/gamelogic/gamestate.js";
 import { commandMove } from "../internal/gamelogic/move.js";
 import { commandSpawn } from "../internal/gamelogic/spawn.js";
+import { handlerPause, handlerMove } from "./handlers.js";
+import { publishJSON } from "../internal/pubsub/publish.js";
 
 async function main() {
   console.log("Connecting...");
   const rabbitConnString = "amqp://guest:guest@localhost:5672/";
   const conn = await amqp.connect(rabbitConnString);
+  const confChannel = await conn.createConfirmChannel()
   console.log("Connection succesful!");
 
   const username = await clientWelcome()
-  const declaration = await declareAndBind(conn, ExchangePerilDirect, `pause.${username}`, PauseKey, SimpleQueueType.Transient);
   const gameState = new GameState(username);
 
-  const gameStatus = true;
+  subscribeJSON(conn, ExchangePerilDirect, `pause.${username}`, PauseKey, SimpleQueueType.Transient, handlerPause(gameState));
+  subscribeJSON(conn, ExchangePerilTopic, `${ArmyMovesPrefix}.${username}`, `${ArmyMovesPrefix}.*` , SimpleQueueType.Transient, handlerMove(gameState));
 
-  while (gameState) {
+  while (true) {
     const inputArray = await getInput();
 
     if (!inputArray) {
@@ -32,7 +36,9 @@ async function main() {
     }
 
     else if (firstWord == "move") {
-      commandMove(gameState, inputArray);
+      const move = commandMove(gameState, inputArray);
+      publishJSON(confChannel, ExchangePerilTopic, `${ArmyMovesPrefix}.${username}`, move);
+      console.log("Move published successfully.")
     }
 
     else if (firstWord == "status") {

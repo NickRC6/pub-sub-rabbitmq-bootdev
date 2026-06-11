@@ -13,10 +13,9 @@ async function main() {
   const confChannel = await conn.createConfirmChannel()
   const declareQueue = await declareAndBind(conn, ExchangePerilTopic, GameLogSlug, `${GameLogSlug}.*`, SimpleQueueType.Durable);
 
-  const serverState = true
   printServerHelp()
 
-  while (serverState) {
+  while (true) {
     const inputArray = await getInput();
 
     if (!inputArray) {
