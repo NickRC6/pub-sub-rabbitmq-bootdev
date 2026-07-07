@@ -11,6 +11,9 @@ export async function declareAndBind(
     const isPersistent = queueType === SimpleQueueType.Durable;
 
     const options = {
+    arguments: {
+      "x-dead-letter-exchange": "peril_dlx",
+    },
     durable: isPersistent,      
     autoDelete: !isPersistent,      
     exclusive: !isPersistent,       
