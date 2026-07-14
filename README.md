@@ -54,9 +54,10 @@ src/
     gamelogic/ # game log generation and logic
     pubsub/    # publish/subscribe helpers
     routing/   # routing key helpers
-Running the Project
-Start RabbitMQ, then run the server and client in separate terminals.
 ```
+
+## Running the Project
+Start RabbitMQ, then run the server and client in separate terminals.
 
 ## Example workflow:
 
