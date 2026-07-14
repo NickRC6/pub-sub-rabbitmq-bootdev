@@ -91,3 +91,17 @@ export async function commandStatus(gs: GameState): Promise<void> {
     console.log(`* ${unit.id}: ${unit.location}, ${unit.rank}`);
   }
 }
+
+export function commandSpam(input: string[]) {
+  const arg = input[1];
+  if (!arg) {
+    throw new Error("usage: spam <number>");
+  }
+
+  const number = parseInt(arg, 10);
+  if (isNaN(number)) {
+    throw new Error("usage: spam <number>");
+  }
+
+  return number;
+}

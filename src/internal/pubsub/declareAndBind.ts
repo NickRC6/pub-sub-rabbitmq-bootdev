@@ -25,8 +25,7 @@ export async function declareAndBind(
     await channel.bindQueue(queueName, exchange, key);
 
     return [channel, queue];
-}   
-
+}  
 
 export enum SimpleQueueType {
   Durable,

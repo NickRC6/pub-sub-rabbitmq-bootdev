@@ -2,7 +2,10 @@ import amqp from "amqplib";
 import { publishJSON } from "../internal/pubsub/publish.js";
 import { ExchangePerilDirect, ExchangePerilTopic, GameLogSlug, PauseKey } from "../internal/routing/routing.js";
 import { getInput, printServerHelp } from "../internal/gamelogic/gamelogic.js";
-import { declareAndBind, SimpleQueueType } from "../internal/pubsub/declareAndBind.js";
+import { SimpleQueueType } from "../internal/pubsub/declareAndBind.js";
+import { subscribeMsgPack, type AckType } from "../internal/pubsub/consume.js";
+import { writeLog, type GameLog } from "../internal/gamelogic/logs.js";
+
 
 
 async function main() {
@@ -11,7 +14,19 @@ async function main() {
   const conn = await amqp.connect(rabbitConnString);
   console.log("Connection succesful!");
   const confChannel = await conn.createConfirmChannel()
-  const declareQueue = await declareAndBind(conn, ExchangePerilTopic, GameLogSlug, `${GameLogSlug}.*`, SimpleQueueType.Durable);
+
+  const handler = async (logMessage: GameLog): Promise<AckType> => {
+    await writeLog(logMessage);
+    process.stdout.write("> ")
+    return "Ack";
+  };
+
+  const declareQueue = await subscribeMsgPack(conn, ExchangePerilTopic, GameLogSlug, `${GameLogSlug}.*`, SimpleQueueType.Durable, handler);
+
+  if (!process.stdin.isTTY) {
+    console.log("Non-interactive mode: skipping command input.");
+    return;
+  }
 
   printServerHelp()
 
